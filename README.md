@@ -1,124 +1,164 @@
-# Expense Review Assistant
+# 💼 费用审核助手 Expense Review Assistant
 
-A Finance x AI portfolio project that demonstrates a first-pass expense review workflow using Python deterministic rules, local semantic analysis, Streamlit, management reporting suggestions, and human review. The public demo runs without an external LLM API by default.
+一个面向 Finance × AI 作品集展示的费用初审 Demo，结合 **Python Rule Engine、Semantic Analysis、Streamlit、Management Reporting Mapping 与 Human Review**，模拟财务人员从报销资料接收到初审结论的完整工作流。
 
-## 1. Project Overview
+> 本项目默认使用本地规则完成语义分类，不调用外部付费 LLM API。所有报销模板、票据和费用制度均为模拟数据，不包含真实公司内部信息。
 
-This repository simulates how finance teams can review a single travel claim with multiple receipts before final approval.
+## 项目概览
 
-It is intentionally scoped as a portfolio demo:
+费用审核通常同时包含两类工作：一类可以通过明确制度和结构化字段完成判断，另一类需要理解票据描述、备注或混合费用等非结构化信息。
 
-- Python handles deterministic financial checks
-- The optional LLM interface is limited to semantic interpretation of unstructured receipt text
-- Human review remains in the loop for ambiguous or exceptional cases
+本项目将两类任务清晰分层：
 
-All demo files are synthetic. No confidential company policy, real employee data, or real reimbursement documents are included.
+- **Python Rule Engine** 负责金额、币种、日期、费用标准、住宿晚数、参与人数和加班打车时间等确定性审核。
+- **Semantic Analysis** 负责辅助识别费用类别、Mixed Expense 和语义不确定性。公开 Demo 默认采用本地关键词规则，并预留可选 LLM 接口。
+- **Human Review** 负责处理规则异常、必要信息缺失、混合费用和低置信度结果，并保留最终审批权。
+- **Management Reporting Mapping** 仅为审核通过的记录生成管理报表科目建议，不替代财务人员的最终入账判断。
 
-## 2. Business Problem
+## 业务背景
 
-Expense review often mixes two very different tasks:
+人工费用审核经常面临以下问题：
 
-- Deterministic checks that can be validated with hard rules
-- Semantic interpretation that depends on noisy receipt text and descriptions
+- 报销模板与票据字段需要逐项核对，重复工作较多。
+- 金额、币种、日期和费用标准等规则分散，审核口径不易保持一致。
+- 票据描述可能不完整，或一张票据同时包含多种费用性质。
+- 审核结论与管理报表科目维护相互割裂，需要再次进行人工分类。
+- 如果直接让 LLM 判断审批结果，过程难以解释，也不符合财务内控要求。
 
-If these responsibilities are blurred, the result is hard to explain, hard to audit, and risky for finance operations.
+这个 Demo 的目标不是替代财务审批，而是展示一个更透明、可解释、可人工复核的费用初审流程。
 
-This demo shows a cleaner split:
-
-- Python validates amounts, dates, currencies, policy limits, participant counts, hotel nights, and overtime taxi timing
-- The optional LLM interface only helps interpret receipt semantics such as category ambiguity or mixed-expense signals
-- Final approval is never delegated to the model
-
-## 3. Solution Architecture
+## 解决方案架构
 
 ```text
-Expense claim template + PDF receipts
-        |
-        v
-Receipt Parser (PDF text extraction + structured fields)
-        |
-        +--> Python Rule Engine (deterministic finance checks)
-        |
-        +--> Semantic Analyzer (local keyword mode by default; optional LLM interface)
-        |
-        +--> Management Reporting Mapper (approved lines only)
-        |
-        v
-Streamlit Review Dashboard
-        |
-        v
-Suggested Pass / Exception Detected / Needs Human Review
+报销 Template + PDF 票据
+          |
+          v
+票据解析与字段匹配
+Receipt Parser
+          |
+          +-----------------------------+
+          |                             |
+          v                             v
+Python Rule Engine              Semantic Analysis
+确定性财务规则审核               本地语义规则（默认）
+                                        |
+          +-----------------------------+
+          |
+          v
+审核结果总览
+通过 / 发现异常 / 需人工复核
+          |
+          +--> 通过记录：生成管理报表科目打标建议
+          |
+          +--> 异常或不确定记录：进入 Human Review
+          |
+          v
+财务人员最终确认
 ```
 
-## 4. Python vs LLM Responsibility
+## Python、语义分析与人工复核的职责边界
 
-### Python deterministic rule engine
+| 模块 | 负责内容 | 不负责内容 |
+| --- | --- | --- |
+| **Python Rule Engine** | 金额、币种、日期、字段完整性、费用限额、人数、住宿晚数、加班打车时间等确定性规则 | 不理解复杂票据语义 |
+| **Semantic Analysis** | 辅助识别费用类别、Mixed Expense、低置信度和语义歧义 | 不做最终审批，不替代确定性规则 |
+| **Human Review** | 复核规则异常、信息缺失和不确定记录，并确认最终处理结果 | 不被系统自动替代 |
 
-Python owns all checks that can be evaluated reliably from structured data:
+这种分工保证了审核结果尽量可解释：能用规则明确判断的内容由 Python 完成，只有传统规则难以稳定处理的语义问题才进入辅助分析。
 
-- amount validation
-- currency validation
-- template vs receipt field checks
-- trip date window checks
-- hotel nightly limit checks
-- meal daily limit checks
-- client entertainment per-person limit checks
-- overtime taxi time checks
-- missing field checks
+## 核心功能
 
-### Semantic analysis and optional LLM interface
+- 支持内置模拟数据和自有测试文件上传两种模式。
+- 从文本型 PDF 票据中提取商户、日期、时间、币种、金额和描述等字段。
+- 将报销 Template 与对应票据进行匹配和字段核验。
+- 运行模块化 Python 财务审核规则，并展示具体异常原因。
+- 默认通过本地关键词规则进行费用语义分类，无 API Key 也能完整运行。
+- 将 Mixed Expense、低置信度或信息不足的记录自动标记为需人工复核。
+- 只为审核通过的记录生成管理报表科目打标建议。
+- 使用 Streamlit 展示审核总览、规则明细、语义分析和人工复核清单。
 
-The public demo currently uses local keyword-based semantic classification. An LLM interface is reserved for optional use when a user explicitly supplies an API key; the checked-in public demo does not call an external LLM API.
+## 审核流程 🧭
 
-If enabled outside the default public path, the LLM is limited to semantic interpretation tasks that are hard to solve with deterministic rules alone:
+1. 选择内置模拟数据，或上传报销 Excel Template 与对应 PDF 票据。
+2. 解析票据文本，并提取可识别的结构化字段。
+3. 根据文件名和费用 ID 将报销记录与票据进行匹配。
+4. 运行 Python Rule Engine，检查金额、币种、日期和费用标准等规则。
+5. 使用本地语义规则辅助识别费用类别、Mixed Expense 和不确定结果。
+6. 输出三类初审状态：`建议通过`、`发现异常`、`需人工复核`。
+7. 仅对通过记录生成 Management Reporting Mapping 建议。
+8. 将异常及不确定记录交由财务人员复核并最终确认。
 
-- infer likely expense category from receipt text
-- detect mixed-expense receipts
-- surface ambiguous descriptions with low confidence
+> 本工具仅提供费用初审建议，不执行最终审批。最终审批结果仍需由财务人员确认。
 
-The LLM does not approve or reject claims.
+## Python Rule Engine
 
-## 5. Key Features
+确定性审核逻辑集中在 `src/rule_engine.py`，当前包括：
 
-- Streamlit UI with bundled sample mode and upload mode
-- PDF receipt parsing without relying on the LLM
-- Modular `src/` structure for parser, rule engine, semantic layer, and utilities
-- Optional OpenAI SDK integration through `OPENAI_API_KEY`; not used by the default public demo
-- Safe local fallback mode when no API key is configured
-- Human-review-oriented output with transparent reasons
+- 申报金额与票据金额核验
+- 币种识别与匹配
+- 报销日期与出差期间核验
+- 票据日期匹配
+- 票据与附件完整性检查
+- 住宿晚数与每晚标准检查
+- 餐饮费用标准检查
+- 客户招待人均标准检查
+- 加班打车时间规则检查
+- 必要字段缺失检查
 
-## 6. Workflow
+每条规则返回标准化结果，包括规则名称、通过状态、说明、标准值和实际值，便于前端展示和人工追溯。
 
-1. Load the bundled synthetic claim package or upload your own `.xlsx` + PDF files.
-2. Parse receipt text into structured fields such as merchant, date/time, currency, amount, and description.
-3. Run deterministic finance checks in Python.
-4. Run local keyword-based semantic classification in the default public demo mode.
-5. Keep an optional LLM interface available for explicit, user-provided configuration; the published demo does not call an external LLM API.
-6. Output one of three review states:
-   - `Suggested Pass`
-   - `Exception Detected`
-   - `Needs Human Review`
-7. Generate management reporting subject suggestions only for `Suggested Pass` records.
-8. Keep exceptions and uncertain records in the Human Review queue.
+## 语义辅助分析 Semantic Analysis
 
-Final approval remains subject to human review.
+公开 Demo 当前默认使用**本地关键词规则**进行语义分类，可以识别以下费用类型：
 
-## 7. Management Reporting Mapping
+- Taxi / 打车
+- Hotel / 住宿
+- Meal / 餐饮
+- Client Entertainment / 客户招待
+- Transportation / 交通
+- Mixed Expense / 混合费用
+- Other / 其他
 
-After deterministic review, only records with `Suggested Pass` receive a management reporting subject suggestion. `Exception Detected` and `Needs Human Review` records do not receive an automatic final subject.
+项目在 `src/semantic_analyzer.py` 中预留了可选 LLM 接口。只有用户主动配置 `OPENAI_API_KEY` 时，程序才会尝试调用外部模型；未配置 API Key 或调用失败时，系统会继续使用本地规则，不影响 Demo 运行。
 
-The mapping layer is implemented in `src/reporting_mapper.py` and is separate from both the rule engine and the Streamlit UI. It currently provides synthetic demo mappings for taxi, overtime taxi, meal, client entertainment, and hotel expenses.
+无论采用哪种语义分析模式，以下记录都会进入 Human Review：
 
-For hotel expenses, the mapper uses receipt nights first and trip duration as a fallback. The current simulated management convention treats stays of 7 nights or fewer as `短期出差住宿` and stays longer than 7 nights as `长期出差住宿`. This threshold is a demo configuration and should be adjusted to match an organisation's actual management reporting policy before operational use.
+- Mixed Expense
+- 语义分类置信度较低
+- 描述信息不足或存在歧义
 
-The output is a suggestion for finance review, not a posting instruction. Finance staff should confirm the subject before final accounting or management reporting maintenance.
+LLM 不负责输出最终的 Approved / Rejected 结论。
 
-## 8. Demo / Screenshots
+## 管理报表科目打标 📊
 
-- Bundled sample data includes 8 synthetic receipt PDFs covering Taxi, Hotel, Meal, Client Entertainment, Overtime Taxi, and Mixed Expense scenarios.
-- The `screenshots/` folder is prepared for Streamlit UI captures before publishing the repo on GitHub.
+`src/reporting_mapper.py` 是独立于审核规则和 Streamlit UI 的管理报表映射层。只有状态为 `建议通过` 的记录才会生成打标建议；`发现异常` 和 `需人工复核` 的记录显示为待确认。
 
-## 9. Project Structure
+当前 Demo 映射示例：
+
+| 费用类型 | 建议管理报表科目 |
+| --- | --- |
+| 打车 | 行政费用 > 差旅费 > 出租车/打车费 |
+| 加班打车 | 行政费用 > 差旅费 > 加班打车费 |
+| 餐饮 | 行政费用 > 差旅费 > 出差餐饮费 |
+| 客户招待 | 业务招待费 |
+| 短期住宿 | 行政费用 > 差旅费 > 短期出差住宿 |
+| 长期住宿 | 行政费用 > 差旅费 > 长期出差住宿 |
+
+住宿分类优先使用票据中的住宿晚数，缺失时使用出差时长作为辅助依据。当前模拟管理口径将 **7 晚及以下**定义为短期住宿，超过 7 晚定义为长期住宿。该阈值仅用于 Demo，可根据企业实际管理制度调整。
+
+## 模拟测试场景
+
+项目内置 1 份模拟报销 Template、1 份模拟费用制度和 8 份模拟 PDF 票据，覆盖：
+
+- 正常打车、住宿、餐饮和客户招待
+- 超出费用标准
+- 加班打车时间不符合规则
+- 参与人数缺失
+- Mixed Expense 与低置信度语义判断
+
+所有案例均为合成数据，不对应任何真实员工、供应商或公司报销记录。
+
+## 项目结构
 
 ```text
 expense-review-assistant/
@@ -140,65 +180,77 @@ expense-review-assistant/
 └── screenshots/
 ```
 
-## 10. How to Run
+## 本地运行 🚀
+
+### 1. 克隆项目
 
 ```bash
+git clone https://github.com/Joyhanz-bot/expense-review-assistant.git
+cd expense-review-assistant
+```
+
+### 2. 创建虚拟环境并安装依赖
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+```
+
+### 3. 启动 Streamlit
+
+```bash
 python3 -m streamlit run app.py
 ```
 
-When the app opens, choose one of these paths:
+启动后可选择：
 
-- `Bundled sample data`: runs the included synthetic demo immediately
-- `Upload your own files`: upload an Excel claim template and matching PDF receipts
+- **内置模拟数据**：直接运行项目中的 8 条模拟费用案例。
+- **上传自有测试文件**：上传 Excel 报销 Template 和对应 PDF 票据。
 
-## 11. LLM Configuration
+建议仅使用模拟或脱敏后的文件进行测试。
 
-The default public demo does not require an API key and does not call an external LLM API. The optional interface reads a key from the environment and never hardcodes secrets in source files.
+## 可选 LLM 配置
+
+默认公开 Demo 不需要 API Key，也不会调用外部 LLM API。如需测试预留接口，可通过环境变量配置：
 
 ```bash
 export OPENAI_API_KEY="your_api_key_here"
+export OPENAI_MODEL="gpt-4.1-mini"  # 可选
 ```
 
-Optional:
+- API Key 只从环境变量读取，不会写入源代码。
+- 未配置 API Key 时，系统正常使用本地关键词规则。
+- 外部模型调用失败时，系统自动回退到本地规则模式。
+- 即使启用 LLM，最终审批仍由财务人员完成。
 
-```bash
-export OPENAI_MODEL="gpt-4.1-mini"
-```
+## 数据隐私与公开安全 🔒
 
-Default public behavior:
+- 所有票据均为模拟 PDF。
+- 报销 Template 和费用制度均为合成文件。
+- 项目不包含真实员工姓名、供应商信息或公司内部政策。
+- 项目不包含 API Key、Token、Password 或 `.env` 文件。
+- `.gitignore` 已排除本地密钥、缓存、虚拟环境和 Streamlit secrets。
 
-- Without `OPENAI_API_KEY`, the app uses local keyword-based semantic classification.
-- The checked-in synthetic demo contains no API key and does not call an external LLM API.
+本仓库可用于公开的 GitHub 作品集展示，但使用者仍应避免上传真实敏感报销资料。
 
-Optional behavior:
+## 当前局限
 
-- If `OPENAI_API_KEY` is present, the app will attempt LLM-assisted semantic analysis.
-- If `OPENAI_API_KEY` is missing, the app still runs normally in fallback demo mode.
-- If the API call fails, the app falls back to keyword-based semantic classification instead of crashing.
+- 票据解析主要面向当前模拟的文本型 PDF，暂不支持扫描图片票据 OCR。
+- 费用规则围绕模拟的新加坡差旅场景设计，不代表真实企业制度。
+- 本地关键词语义分类适合 Demo，不具备通用票据理解能力。
+- 管理报表科目和 7 晚住宿阈值均为模拟管理口径，不等同于企业会计科目表。
+- 当前流程面向单个报销包展示，尚未覆盖批量审批、权限管理和审计日志。
+- Streamlit 页面以作品集演示和可解释性为目标，不是生产级财务系统。
 
-## 12. Demo Data & Privacy
+## 后续可扩展方向
 
-- All receipts are synthetic sample PDFs
-- The expense template is synthetic
-- The travel policy PDF is a synthetic mock policy
-- No real employees, vendors, passwords, or internal company records are included
+- 增加 OCR 或多模态票据解析，支持扫描件和图片票据。
+- 将费用制度抽离为可配置的 YAML / JSON 文件。
+- 增加规则引擎、解析器和边界场景的自动化测试。
+- 扩展多国家、多币种和多套费用制度的模拟场景。
+- 支持导出审核报告和可追溯的审计记录。
 
-This repo is designed to be safe for public GitHub sharing as a portfolio project.
+---
 
-## 13. Limitations
-
-- The bundled receipt parser currently targets text-based synthetic PDFs, not scanned image receipts
-- Policy logic is intentionally simplified and centered on the bundled Singapore demo scenario
-- Semantic analysis is single-receipt classification, not a full enterprise approval workflow
-- Management reporting mappings use synthetic demo categories and a configurable 7-night hotel threshold; they are not a substitute for an organisation's chart of accounts or accounting policy
-- No OCR pipeline is included yet for image-heavy receipts
-- The UI is optimized for demo clarity rather than production-scale operations
-
-## 14. Future Improvements
-
-- Add OCR or multimodal receipt ingestion for non-text PDFs and images
-- Expand policy configuration into editable external YAML or JSON files
-- Add test coverage for rule outputs and parser edge cases
-- Support multi-country demo policies beyond the current bundled scenario
-- Export review results as a downloadable audit report
+**Portfolio Positioning:** Finance Workflow Automation × Python × Semantic Analysis × Human-in-the-Loop
