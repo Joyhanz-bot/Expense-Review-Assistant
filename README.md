@@ -6,9 +6,9 @@
 
 [🌐 在线 Demo（待补充）](#在线-demo) · [💻 GitHub Repository](https://github.com/Joyhanz-bot/Expense-Review-Assistant)
 
-> **截图占位**：当前仓库尚未包含正式页面截图，未生成假截图。请将主页面截图放入 `screenshots/overview.png`。
->
-> <img src="screenshots/overview.png" width="900" alt="费用审核助手主页面截图（待补充）">
+![费用审核概览](screenshots/overview.png)
+
+费用审核概览展示从报销资料和票据进入系统，到规则审核、异常识别和人工复核的完整入口。
 
 ## 1. 项目简介
 
@@ -93,13 +93,13 @@ Mixed Expense、低置信度或语义无法稳定判断的记录必须进入 Hum
 
 ## 7. Demo 截图
 
-请将正式截图放入 `screenshots/` 后替换以下占位文件：
+![管理报表科目打标建议](screenshots/reporting_mapping.png)
 
-| 截图 | 说明 |
-| --- | --- |
-| `screenshots/overview.png` | 审核结果总览：快速区分通过、规则异常和需人工复核记录。 |
-| `screenshots/reporting_mapping.png` | 管理报表打标建议：对审核通过项生成建议科目路径。 |
-| `screenshots/human_review.png` | 人工复核区域：直接查看原始申报、票据和核心处理建议。 |
+管理报表科目打标建议只针对审核通过项生成，展示费用类型到管理报表科目路径的映射依据。
+
+![人工复核清单](screenshots/human_review.png)
+
+人工复核区域集中展示规则异常、信息缺失、Mixed Expense 和低置信度记录，保留财务人员最终确认权。
 
 ## 在线 Demo
 
