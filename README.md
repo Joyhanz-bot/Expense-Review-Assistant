@@ -4,7 +4,7 @@
 
 面向费用初审场景，通过 Python 固化确定性审核规则，并结合语义辅助分析、管理报表科目映射与人工复核，提高费用处理效率。
 
-[🌐 在线 Demo（待补充）](#在线-demo) · [💻 GitHub Repository](https://github.com/Joyhanz-bot/Expense-Review-Assistant)
+[🌐 在线体验 Demo](https://expense-review-assistant.streamlit.app/) · [💻 GitHub Repository](https://github.com/Joyhanz-bot/Expense-Review-Assistant)
 
 ![费用审核概览](screenshots/overview.png)
 
@@ -103,7 +103,7 @@ Mixed Expense、低置信度或语义无法稳定判断的记录必须进入 Hum
 
 ## 在线 Demo
 
-> 当前未在仓库部署记录或 README 中发现可验证的 Streamlit 公网地址。请部署后将链接补充到顶部“在线 Demo”入口。
+> [在线体验 Demo](https://expense-review-assistant.streamlit.app/)：打开费用审核助手的 Streamlit 在线页面。
 
 ## 8. 项目结构
 
